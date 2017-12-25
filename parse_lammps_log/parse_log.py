@@ -1,10 +1,12 @@
 # Python 3.x
 
 """
-Copied and adapted some code from Pymatgen, which has MIT License. See:
+Copied and adapted some code from Pymatgen, which has a MIT License. See:
 https://github.com/materialsproject/pymatgen/blob/master/pymatgen/io/lammps/output.py
 
-Parses a LAMMPs log file (set with thermo_style command).
+Parses a LAMMPs log file.
+
+Alta Fang, 2017
 """
 
 import re
@@ -30,14 +32,16 @@ class LammpsLog:
     def _parse_log(self):
         """
         Parse the log file for run and thermodynamic data.
-        Sets the thermodynamic data as a structured numpy array with field names
-        taken from the custom thermo_style command. 
+        Automatically detects thermo_style and parses accordingly.
+        Sets the thermodynamic data as a dictionary with field names
+        taken from the custom thermo_style command if using thermo_style custom. 
         """
 
         thermo_data = []
         fixes = []
         d_build = None
         thermo_pattern_custom = None
+        thermo_multi_keys = None
         with open(self.log_file, 'r') as logfile:
             for line in logfile:
                 # timestep, the unit depedns on the 'units' command
@@ -73,20 +77,22 @@ class LammpsLog:
                             [r"\s+([0-9eE\.+-]+)" for _ in range(len(fields) - 1)])
                         thermo_pattern_custom = re.compile(thermo_pattern_string)
                     else: # multi
-                        keys = "Step CPU TotEng KinEng Temp PotEng E_bond E_angle \
-                                E_dihed E_impro E_vdwl E_coul E_long Press \
+                        thermo_multi_keys = "Step CPU TotEng KinEng Temp PotEng E_bond \
+                                E_angle E_dihed E_impro E_vdwl E_coul E_long Press \
                                 Volume".split()
-                        thermo_data.append({key:[] for key in keys})
+                        # Create dictionary of empty lists
+                        thermo_data.append({key:[] for key in thermo_multi_keys})
+                # Parse custom style
                 if thermo_pattern_custom:
                     if thermo_pattern_custom.search(line):
                         m = thermo_pattern_custom.search(line)
                         thermo_data.append(tuple([float(x) for x in m.groups()]))
-                elif thermo_data and isinstance(thermo_data[-1], dict):
+                # Parse multi style by appending to corresponding lists
+                elif thermo_multi_keys: 
                     step_re = re.search(r'Step\s+([0-9eE]+).+', line)
                     if step_re:
                         step = int(step_re.group(1))
-                        step_list = thermo_data[-1]['Step']
-                        step_list.append(step)
+                        thermo_data[-1]['Step'].append(step)
                     remaining_re = re.findall(r'\s*([a-zA-Z_]+)\s+=\s+([0-9eE\.+-]+)\s*', 
                                               line)
                     if remaining_re:
@@ -97,7 +103,7 @@ class LammpsLog:
         if thermo_data:
             if isinstance(thermo_data[0], str):
                 self.thermo_data = [thermo_data]
-            elif isinstance(thermo_data[0], tuple):
+            elif isinstance(thermo_data[0], tuple): # thermo_style custom
                 # Changing return type from list to np.array, compared to pymatgen 
                 # BUGFIX ALTA: Also need to ensure that thermo_data is the right length!
                 try:
@@ -105,11 +111,10 @@ class LammpsLog:
                 except AttributeError: # Catch if nmdsteps or interval are not attributes
                     pass
                 # numpy arrays are easier to reshape, previously we used np.array with dtypes
-                self.thermo_data = {
-                    fields[i]: np.array([thermo_data[j][i] 
-                    for j in range(len(thermo_data))])
-                    for i in range(len(fields))}
-            else:
+                self.thermo_data = {fields[i]: np.array([thermo_data[j][i] 
+                                    for j in range(len(thermo_data))])
+                                    for i in range(len(fields))}
+            else: # thermo_style multi
                 self.thermo_data = {k:np.array(v) for (k, v) in thermo_data[0].items()}
 
         self.fixes = fixes

@@ -1,7 +1,7 @@
 # Python 3.x
 
 """
-Unittest of LAMMPs log parsing tools
+Unittest of parse_lammps_log.parse_log
 """
 
 import os
@@ -15,6 +15,7 @@ test_dir = os.path.join(os.path.dirname(__file__))
 class TestParseLog(unittest.TestCase):
 
     def setUp(self):
+        # Create LammpsLog objects from log text files
         log_file_custom = os.path.join(test_dir, "log.lammps_custom")
         self.log_custom = LammpsLog(log_file=log_file_custom)
         
@@ -23,7 +24,7 @@ class TestParseLog(unittest.TestCase):
     
     def test_log_custom(self):
         """
-        Test parsing a LAMMPs log file.
+        Test parsing a LAMMPs log file with thermo_style custom.
         
         Adapted from/inspired by pymatgen:
         https://github.com/materialsproject/pymatgen/blob/master/pymatgen/io/lammps/tests/test_output.py
@@ -44,6 +45,16 @@ class TestParseLog(unittest.TestCase):
                                    tuple(self.log_custom.thermo_data.values()))[0])  
                                       
     def test_log_multi(self):
+        """
+        Test parsing a LAMMPs log file with thermo_style multi.
+        """
+        # Check fields
+        expected_fields = "Step CPU TotEng KinEng Temp PotEng E_bond E_angle \
+                           E_dihed E_impro E_vdwl E_coul E_long Press \
+                           Volume".split()
+        self.assertEqual(sorted(expected_fields), 
+                         sorted(self.log_multi.thermo_data.keys()))                   
+        
         # Code for making the expected data
         #np.savetxt(os.path.join(test_dir, "log_multi_data.txt"), 
         #           np.dstack(tuple(self.log_multi.thermo_data.values()))[0])
@@ -51,7 +62,7 @@ class TestParseLog(unittest.TestCase):
         # Check data
         expected_data = np.loadtxt(os.path.join(test_dir, "log_multi_data.txt"))
         np.testing.assert_allclose(expected_data, np.dstack(
-                                   tuple(self.log_multi.thermo_data.values()))[0])  
+                                   tuple(self.log_multi.thermo_data.values()))[0])
         
 if __name__ == '__main__':
     unittest.main()
