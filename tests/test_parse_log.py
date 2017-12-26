@@ -13,14 +13,6 @@ from parse_lammps_log.parse_log import LammpsLog
 test_dir = os.path.join(os.path.dirname(__file__))
 
 class TestParseLog(unittest.TestCase):
-
-    def setUp(self):
-        # Create LammpsLog objects from log text files
-        log_file_custom = os.path.join(test_dir, "log.lammps_custom")
-        self.log_custom = LammpsLog(log_file=log_file_custom)
-        
-        log_file_multi = os.path.join(test_dir, "log.lammps_multi")
-        self.log_multi = LammpsLog(log_file=log_file_multi)
     
     def test_log_custom(self):
         """
@@ -29,6 +21,9 @@ class TestParseLog(unittest.TestCase):
         Adapted from/inspired by pymatgen:
         https://github.com/materialsproject/pymatgen/blob/master/pymatgen/io/lammps/tests/test_output.py
         """
+        # Create LammpsLog object from log text file
+        log_file_custom = os.path.join(test_dir, "log.lammps_custom")
+        self.log_custom = LammpsLog(log_file=log_file_custom)
         
         # Check fields
         expected_fields = "step time pe ke etotal temp press c_msd[4]".split()
@@ -48,6 +43,10 @@ class TestParseLog(unittest.TestCase):
         """
         Test parsing a LAMMPs log file with thermo_style multi.
         """
+        # Create LammpsLog object from log text file
+        log_file_multi = os.path.join(test_dir, "log.lammps_multi")
+        self.log_multi = LammpsLog(log_file=log_file_multi)
+        
         # Check fields
         expected_fields = "Step CPU TotEng KinEng Temp PotEng E_bond E_angle \
                            E_dihed E_impro E_vdwl E_coul E_long Press \
