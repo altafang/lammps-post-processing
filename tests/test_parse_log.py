@@ -62,6 +62,23 @@ class TestParseLog(unittest.TestCase):
         expected_data = np.loadtxt(os.path.join(test_dir, "log_multi_data.txt"))
         np.testing.assert_allclose(expected_data, np.dstack(
                                    tuple(self.log_multi.thermo_data.values()))[0])
+                                   
+    def test_log_one(self):
+        """
+        Test parsing a LAMMPs log file with thermo_style one.
+        """
+        # Create LammpsLog object from log text file
+        log_file_one = os.path.join(test_dir, "log.lammps_one")
+        self.log_one = LammpsLog(log_file=log_file_one)  
+        
+        # Code for making the expected data
+        #np.savetxt(os.path.join(test_dir, "log_one_data.txt"), 
+        #           np.dstack(tuple(self.log_one.thermo_data.values()))[0])
+        
+        # Check data
+        expected_data = np.loadtxt(os.path.join(test_dir, "log_one_data.txt"))
+        np.testing.assert_allclose(expected_data, np.dstack(
+                                   tuple(self.log_one.thermo_data.values()))[0])
         
 if __name__ == '__main__':
     unittest.main()

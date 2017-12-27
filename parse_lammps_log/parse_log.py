@@ -42,8 +42,13 @@ class LammpsLog:
         d_build = None
         thermo_pattern_custom = None
         thermo_multi_keys = None
+        thermo_pattern_one = None
         with open(self.log_file, 'r') as logfile:
             for line in logfile:
+                # Exclude comments
+                comment_re = re.search(r"^\s*#+.*", line)
+                if comment_re:
+                    continue
                 # timestep, the unit depedns on the 'units' command
                 time = re.search(r'timestep\s+([0-9]+)', line)
                 if time and not d_build:
@@ -65,28 +70,36 @@ class LammpsLog:
                 if thermo and not d_build:
                     self.interval = float(thermo.group(1))
                 # thermodynamic data, set by the thermo_style command
-                fmt = re.search(r'thermo_style.+', line)
+                fmt = re.search(r'thermo_style.+', line) 
                 if fmt and not d_build:
                     thermo_type = fmt.group().split()[1]
-                    fields = fmt.group().split()[2:]
-                    no_parse = ["one"]
-                    if thermo_type in no_parse:
-                        thermo_data.append("cannot parse thermo_style")
-                    elif thermo_type == "custom":
+                    if thermo_type == "custom":
+                        fields = fmt.group().split()[2:]
                         thermo_pattern_string = r"\s*([0-9eE\.+-]+)" + "".join(
                             [r"\s+([0-9eE\.+-]+)" for _ in range(len(fields) - 1)])
                         thermo_pattern_custom = re.compile(thermo_pattern_string)
-                    else: # multi
+                    elif thermo_type == "multi": 
                         thermo_multi_keys = "Step CPU TotEng KinEng Temp PotEng E_bond \
                                 E_angle E_dihed E_impro E_vdwl E_coul E_long Press \
                                 Volume".split()
                         # Create dictionary of empty lists
                         thermo_data.append({key:[] for key in thermo_multi_keys})
+                    else: # thermo_style one
+                        # Includes Volume if volume varies, otherwise does not
+                        fields = "Step Temp E_pair E_mol TotEng Press Volume".split() 
+                        thermo_pattern_string = r"\s*([0-9eE\.+-]+)" + "".join( \
+                            [r"\s+([0-9eE\.+-]+)" for _ in range(len(fields) - 2)]) \
+                            + r"\s*([0-9eE\.+-]*)"
+                        thermo_pattern_one = re.compile(thermo_pattern_string)
                 # Parse custom style
                 if thermo_pattern_custom:
                     if thermo_pattern_custom.search(line):
                         m = thermo_pattern_custom.search(line)
                         thermo_data.append(tuple([float(x) for x in m.groups()]))
+                elif thermo_pattern_one:
+                    if thermo_pattern_one.search(line):
+                        m = thermo_pattern_one.search(line)
+                        thermo_data.append(tuple([float(x) for x in m.groups() if x]))
                 # Parse multi style by appending to corresponding lists
                 elif thermo_multi_keys: 
                     step_re = re.search(r'Step\s+([0-9eE]+).+', line)
@@ -103,7 +116,7 @@ class LammpsLog:
         if thermo_data:
             if isinstance(thermo_data[0], str):
                 self.thermo_data = [thermo_data]
-            elif isinstance(thermo_data[0], tuple): # thermo_style custom
+            elif isinstance(thermo_data[0], tuple): # thermo_style custom or one
                 # Changing return type from list to np.array, compared to pymatgen 
                 # BUGFIX ALTA: Also need to ensure that thermo_data is the right length!
                 try:
@@ -111,6 +124,9 @@ class LammpsLog:
                 except AttributeError: # Catch if nmdsteps or interval are not attributes
                     pass
                 # numpy arrays are easier to reshape, previously we used np.array with dtypes
+                # Handle case when there is no Volume in thermo_style one
+                if len(fields) != len(thermo_data[0]): 
+                    fields = fields[:-1]
                 self.thermo_data = {fields[i]: np.array([thermo_data[j][i] 
                                     for j in range(len(thermo_data))])
                                     for i in range(len(fields))}
