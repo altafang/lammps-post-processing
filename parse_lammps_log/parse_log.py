@@ -29,6 +29,8 @@ class LammpsLog:
         self.timestep = -1
         self._parse_log()
 
+    # TODO: be able to parse log file even if no thermo_style is explicitly specified
+    # (default is thermo_style one)
     def _parse_log(self):
         """
         Parse the log file for run and thermodynamic data.
