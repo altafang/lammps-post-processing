@@ -24,7 +24,7 @@ class TestParseLog(unittest.TestCase):
         Test parsing a LAMMPs log file with thermo_style custom.
         """
         # Create LammpsLog object from log text file
-        log_file_custom = os.path.join(test_dir, "log.lammps_custom")
+        log_file_custom = os.path.join(test_dir, "test_files", "log.lammps_custom")
         self.log_custom = LammpsLog(log_file=log_file_custom)
         
         # Check fields
@@ -38,7 +38,8 @@ class TestParseLog(unittest.TestCase):
         #                     in sorted(self.log_custom.thermo_data.items())])[0])  
         
         # Check data
-        expected_data = np.loadtxt(os.path.join(test_dir, "log_custom_data.txt"))
+        expected_data = np.loadtxt(os.path.join(test_dir, "test_files", 
+                                                "log_custom_data.txt"))
         np.testing.assert_allclose(expected_data, np.stack([v[1] for v 
                                    in sorted(self.log_custom.thermo_data.items())])[0])    
                                       
@@ -47,7 +48,7 @@ class TestParseLog(unittest.TestCase):
         Test parsing a LAMMPs log file with thermo_style multi.
         """
         # Create LammpsLog object from log text file
-        log_file_multi = os.path.join(test_dir, "log.lammps_multi")
+        log_file_multi = os.path.join(test_dir, "test_files", "log.lammps_multi")
         self.log_multi = LammpsLog(log_file=log_file_multi)
         
         # Check fields
@@ -63,7 +64,8 @@ class TestParseLog(unittest.TestCase):
         #                     in sorted(self.log_multi.thermo_data.items())])[0])  
         
         # Check data
-        expected_data = np.loadtxt(os.path.join(test_dir, "log_multi_data.txt"))
+        expected_data = np.loadtxt(os.path.join(test_dir, "test_files", 
+                                                "log_multi_data.txt"))
         np.testing.assert_allclose(expected_data, np.stack([v[1] for v 
                                    in sorted(self.log_multi.thermo_data.items())])[0])  
                                     
@@ -72,7 +74,7 @@ class TestParseLog(unittest.TestCase):
         Test parsing a LAMMPs log file with thermo_style one.
         """
         # Create LammpsLog object from log text file
-        log_file_one = os.path.join(test_dir, "log.lammps_one")
+        log_file_one = os.path.join(test_dir, "test_files", "log.lammps_one")
         self.log_one = LammpsLog(log_file=log_file_one)  
         
         # Code for making the expected data (dict values sorted by dict keys)
@@ -81,7 +83,8 @@ class TestParseLog(unittest.TestCase):
         #                     in sorted(self.log_one.thermo_data.items())])[0])  
         
         # Check data
-        expected_data = np.loadtxt(os.path.join(test_dir, "log_one_data.txt"))
+        expected_data = np.loadtxt(os.path.join(test_dir, "test_files", 
+                                                "log_one_data.txt"))
         np.testing.assert_allclose(expected_data, np.stack([v[1] for v 
                                    in sorted(self.log_one.thermo_data.items())])[0])  
         
