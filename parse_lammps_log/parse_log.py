@@ -1,4 +1,4 @@
-# Python 3.x
+# Python 2.7 or Python 3.x
 
 """
 Copied and adapted some code from Pymatgen, which has a MIT License. See:
